@@ -16,7 +16,6 @@ class MainHandler(tornado.web.RequestHandler):
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
 
     def prepare(self):
-        print('main  prepare')
         super().prepare()
         self.connectToDatabase()
 
@@ -98,7 +97,6 @@ class MainHandler(tornado.web.RequestHandler):
 
 class TypeHandler(MainHandler):
     async def prepare(self):
-        print('type  prepare')
         super().prepare()
         self.myModel = Type
 
@@ -203,10 +201,71 @@ class CompositionHandler(MainHandler):
 
         print(str(query.statement.compile(compile_kwargs={"literal_binds": True})))
 
-        for comp in compositions:
-            resp.append(comp.serialize())
+        # for comp in compositions:
+        #     resp.append(comp.serialize())
 
-        return await self.sendSuccess(resp)
+        canvas = compositions[0].serialize()
+        data = {
+            'type': 'create2',
+            'object_id': canvas['composition_type'],
+            'element_id': canvas['composition_type'],
+            'objectType': canvas['name'],
+            'backColor': canvas['styles'],
+            'frame': self.replaceNoneWithNull(json.loads(canvas['frame'])),
+            'children': self.getChildren(canvas['composition_id'], compositions)
+        }
+
+        return data
+        # return await self.sendSuccess(resp)
+
+    def replaceNoneWithNull(self,frame):
+        for key in frame:
+            if frame[key] == None:
+                frame[key] = "null"
+        return frame
+
+    def getChildData(self, child_id, data):
+        child_data = {}
+        for item in data:
+            if item[0] == child_id:
+                child_data = {
+                    'type': 'create2',
+                    'object_id': item[2],
+                    'objectType': item[1],
+                    'backColor': item[3],
+                    'frame': self.replaceNoneWithNull(json.loads(item[4])),
+                    'children': self.getChildren(child_id, data)
+                }
+
+                if item[1] == 'Image':
+                    child_data['url'] = item[5]
+
+                if item[1] == 'Label':
+                    child_data['text'] = item[6]
+                    child_data['fontSize'] = item[7]
+
+                if item[1] == 'HTMLEditor':
+                    child_data['text'] = item[6]
+
+                return child_data
+
+    def getChildren(self, parent_id, data):
+        print('Parent Id -> ', parent_id)
+        childs = []
+
+        self.myModel = CompositionItem
+
+        query = self.gdb.query(self.myModel)
+        query = query.join(Composition, CompositionItem.parent_id == Composition.composition_id)
+        query = query.filter(CompositionItem.parent_id == parent_id)
+        composition_items = query.all()
+
+        for child in composition_items:
+            child = child.serialize()
+            print('Child -> ', child)
+        #     childs.append(self.getChildData(child.child_id, data))
+        # return childs
+
 
     async def Add(self, *args, **kwargs):
         type = Type()
