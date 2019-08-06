@@ -9,6 +9,12 @@ from data import Type, Composition, CompositionItem
 
 
 class MainHandler(tornado.web.RequestHandler):
+
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
     def prepare(self):
         print('main  prepare')
         super().prepare()
@@ -58,6 +64,11 @@ class MainHandler(tornado.web.RequestHandler):
         if hasattr(self, 'gdb'):
             self.gdb.close()
             self.gdb = None
+
+    def options(self):
+        # no body
+        self.set_status(204)
+        self.finish()
 
     async def sendSuccess(self, data):
         resp = {'status': 'Ok', 'data': data}
@@ -117,6 +128,7 @@ class TypeHandler(MainHandler):
             if len(resp) == 0:
                 resp.append({
                     "name": t['type_type'],
+                    "selected": 0,
                     "children": [ t ]
                 })
             else:
@@ -133,6 +145,7 @@ class TypeHandler(MainHandler):
                 else:
                     resp.append({
                         "name": t['type_type'],
+                        "selected": 0,
                         "children": [t]
                     })
 
