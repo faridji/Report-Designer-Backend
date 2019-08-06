@@ -111,9 +111,30 @@ class TypeHandler(MainHandler):
 
         types = query.all()
 
-        resp = {}
+        resp = []
         for t in types:
-            resp[t.type_name] = t.serialize()
+            t = t.serialize()
+            if len(resp) == 0:
+                resp.append({
+                    "name": t['type_type'],
+                    "children": [ t ]
+                })
+            else:
+                isFound = False
+                _obj = None
+
+                for obj in resp:
+                    if  obj['name'] == t['type_type']:
+                        _obj = obj['children']
+                        isFound = True
+
+                if isFound:
+                    _obj.append(t)
+                else:
+                    resp.append({
+                        "name": t['type_type'],
+                        "children": [t]
+                    })
 
         await self.sendSuccess(resp)
 
