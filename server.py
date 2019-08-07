@@ -1,13 +1,12 @@
-import tornado
+import tornado.web
 from configobj import ConfigObj
-from handlers import TypeHandler, CompositionHandler, CompositionItemHandler, MainHandler
+from handlers import MainHandler, TypeHandler, CompositionHandler
 
 class MakeApp(tornado.web.Application):
     def __init__(self, conf):
         handlers = [
             (r"/api/type/(.*)", TypeHandler),
             (r"/api/composition/(.*)", CompositionHandler),
-            (r"/api/ci/(.*)", CompositionItemHandler),
             (r"/api/", MainHandler),
         ]
         self.Config = conf
