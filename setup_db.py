@@ -35,9 +35,21 @@ class Setup:
         sessionMaker = sessionmaker(bind=engine)
         self.gdb = sessionMaker()
 
-        self.insertPreLoadedData()
+        type_id = self.createRootType()
+        self.insertPreLoadedData(type_id)
 
-    def insertPreLoadedData(self):
+    def createRootType(self):
+        type = Type()
+
+        type.name = 'ROOT ELEMENT'
+
+        self.gdb.add(type)
+        self.gdb.commit()
+
+        print('type_id -> ', type.id)
+        return type.id
+
+    def insertPreLoadedData(self, type_id):
 
         currDir = os.path.dirname(os.path.realpath(__file__))
         basicElementDataFile = 'preloaded_data.json'.format(currDir)
@@ -45,17 +57,8 @@ class Setup:
         with open(basicElementDataFile) as data_file:
             data = json.load(data_file)
 
-        for el_type in data:
-            type = Type()
-
-            type.type_name = el_type['name']
-            type.type_type = el_type['type']
-            type.type_description = el_type.get('description', None)
-
-            self.gdb.add(type)
-            self.gdb.flush()
-
-            self.iterateJson(data=el_type['data'], parent={}, type_id=type.type_id)
+        for composition in data:
+            self.iterateJson(data=composition, parent={}, type_id=type_id)
 
         self.gdb.commit()
         self.gdb.close()
@@ -69,8 +72,11 @@ class Setup:
 
     def writeToComposition(self, command, parent, type_id):
         obj = Composition()
-        obj.name = command['object_id']
-        obj.composition_type = command['objectType']
+        obj.type_id = type_id
+
+        obj.name = command['name']
+        obj.object_id = command['object_id']
+        obj.objectType = command['objectType']
         obj.frame = json.dumps(command['frame'])
         obj.styles = command['backColor']
         obj.imageURL = command.get('url', None)
@@ -78,7 +84,6 @@ class Setup:
         obj.fontSize = command.get('fontSize', None)
         obj.creator = 'Farid'
         obj.is_private = 0
-        obj.type_id = type_id
 
         self.gdb.add(obj)
         self.gdb.flush()

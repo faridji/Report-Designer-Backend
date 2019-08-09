@@ -32,7 +32,7 @@ class MainHandler(tornado.web.RequestHandler):
         resp = {}
 
         try:
-            return await func(args, kwargs)
+            return await func(args, **kwargs)
         except ProgrammingError as pe:
             print('kw', pe)
             resp['status'] = 'KeyError'

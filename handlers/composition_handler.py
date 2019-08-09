@@ -9,25 +9,32 @@ class CompositionHandler(MainHandler):
 
     async def GetByType(self, *args, **kwargs):
         query = self.gdb.query(Composition)
-        type_id = self.data['type_id']
-        query = query.join(Type, Type.type_id == Composition.type_id)
-        query = query.filter(Type.type_id == type_id)
+
+        type_id = self.data['id']
+        query = query.join(Type, Type.id == Composition.type_id)
+        query = query.filter(Type.id == type_id)
         compositions = query.all()
 
         print(str(query.statement.compile(compile_kwargs={"literal_binds": True})))
 
-        canvas = compositions[0].serialize()
-        data = {
-            'type': 'create2',
-            'object_id': canvas['name'],
-            'element_id': canvas['name'],
-            'objectType': canvas['composition_type'],
-            'backColor': canvas['styles'],
-            'frame': self.replaceNoneWithNull(json.loads(canvas['frame'])),
-            'children': self.getChildren(canvas['composition_id'], compositions)
-        }
+        resp = []
+        for comp in compositions:
+            comp = comp.serialize();
 
-        return await self.sendSuccess(data)
+            if comp['objectType'] == 'Canvas':
+                data = {
+                    'type': 'create2',
+                    'object_id': comp['object_id'],
+                    'name': comp['name'],
+                    'element_id': comp['object_id'],
+                    'objectType': comp['objectType'],
+                    'backColor': comp['styles'],
+                    'frame': self.replaceNoneWithNull(json.loads(comp['frame'])),
+                    'children': self.getChildren(comp['composition_id'], compositions)
+                }
+                resp.append(data)
+
+        return await self.sendSuccess(resp)
 
     def replaceNoneWithNull(self,frame):
         for key in frame:
@@ -42,21 +49,21 @@ class CompositionHandler(MainHandler):
             if item['composition_id'] == child_id:
                 child_data = {
                     'type': 'create2',
-                    'object_id': item['name'],
-                    'objectType': item['composition_type'],
+                    'object_id': item['object_id'],
+                    'objectType': item['objectType'],
                     'backColor': item['styles'],
                     'frame': self.replaceNoneWithNull(json.loads(item['frame'])),
                     'children': self.getChildren(child_id, data)
                 }
 
-                if item['composition_type'] == 'Image':
+                if item['objectType'] == 'Image':
                     child_data['url'] = item['imageURL']
 
-                if item['composition_type'] == 'Label':
+                if item['objectType'] == 'Label':
                     child_data['text'] = item['labelText']
                     child_data['fontSize'] = item['fontSize']
 
-                if item['composition_type'] == 'HTMLEditor':
+                if item['objectType'] == 'HTMLEditor':
                     child_data['text'] = item['labelText']
 
                 return child_data

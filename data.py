@@ -31,10 +31,8 @@ class Type(Base, Serializer):
     __tablename__ = 'types'
     __table_args__ = DEFAULT_TABLE_ARGS
 
-    type_id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    type_name = Column(String(55), nullable=False)
-    type_type = Column(String(55), nullable=False)
-    type_description = Column(String(255), nullable=True)
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    name = Column(String(55), nullable=False)
 
 
 class Composition(Base, Serializer):
@@ -43,11 +41,12 @@ class Composition(Base, Serializer):
 
     composition_id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
 
-    type_id = Column(ForeignKey(Type.type_id, onupdate='RESTRICT', ondelete='RESTRICT'), nullable=False)
-    type = relationship(Type, remote_side=Type.type_id, foreign_keys=type_id, lazy='select')
+    type_id = Column(ForeignKey(Type.id, onupdate='RESTRICT', ondelete='RESTRICT'), nullable=False)
+    type = relationship(Type, remote_side=Type.id, foreign_keys=type_id, lazy='select')
 
-    composition_type = Column(String(255), nullable=False)
-    name = Column(String(55), nullable=False)
+    name = Column(String(100), nullable=True)
+    objectType = Column(String(255), nullable=False)
+    object_id = Column(String(55), nullable=False)
     styles = Column(String(255), nullable=False)
     frame = Column(String(255), nullable=False)
     imageURL = Column(String(255), nullable=True)
@@ -62,7 +61,7 @@ class CompositionItem(Base, Serializer):
 
     composition_item_id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
 
-    parent_id = Column(ForeignKey(Composition.composition_id, onupdate='RESTRICT', ondelete='RESTRICT'), nullable=False)
+    parent_id = Column(ForeignKey(Composition.composition_id, onupdate='RESTRICT', ondelete='RESTRICT'), nullable=True)
     parent = relationship(Composition, remote_side=Composition.composition_id, foreign_keys=parent_id, lazy='select')
 
     child_id = Column(ForeignKey(Composition.composition_id, onupdate='RESTRICT', ondelete='RESTRICT'), nullable=False)
