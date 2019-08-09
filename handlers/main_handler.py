@@ -1,5 +1,5 @@
 import json
-import tornado
+import tornado.web
 from mysql.connector.errors import ProgrammingError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
