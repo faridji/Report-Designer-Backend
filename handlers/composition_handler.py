@@ -19,7 +19,7 @@ class CompositionHandler(MainHandler):
 
         resp = []
         for comp in compositions:
-            comp = comp.serialize();
+            comp = comp.serialize()
 
             if comp['objectType'] == 'Canvas':
                 data = {
@@ -85,30 +85,25 @@ class CompositionHandler(MainHandler):
 
 
     async def Add(self, *args, **kwargs):
-        type = Type()
 
-        type.type_name = self.data['name']
-        type.type_type = self.data['type']
-        type.type_description = self.data.get('description', None)
-
-        self.gdb.add(type)
-        self.gdb.flush()
-
-        self.iterateJson(data=self.data['data'], parent={}, type_id=type.type_id)
+        self.iterateJson(name = self.data['name'], data=self.data['data'], parent={}, type_id=self.data['type_id'])
         self.gdb.commit()
 
         self.add_header('Content-Type', 'application/json')
-        self.write({ 'id' : type.type_id})
+        self.write({ 'id' : self.data['type_id']})
 
-    def iterateJson(self,data, parent, type_id):
-        self.writeToComposition(data, parent, type_id)
+    def iterateJson(self, name, data, parent, type_id):
+        self.writeToComposition(name, data, parent, type_id)
         for obj in data['children']:
-            self.iterateJson(obj, data, type_id)
+            self.iterateJson(name, obj, data, type_id)
 
-    def writeToComposition(self, command, parent, type_id):
-        obj = self.myModel()
-        obj.name = command['object_id']
-        obj.composition_type = command['objectType']
+    def writeToComposition(self, name, command, parent, type_id):
+        obj = Composition()
+        obj.type_id = type_id
+
+        obj.name = name
+        obj.object_id = command['object_id']
+        obj.objectType = command['objectType']
         obj.frame = json.dumps(command['frame'])
         obj.styles = command['backColor']
         obj.imageURL = command.get('url', None)
@@ -116,15 +111,14 @@ class CompositionHandler(MainHandler):
         obj.fontSize = command.get('fontSize', None)
         obj.creator = 'Farid'
         obj.is_private = 0
-        obj.type_id = type_id
 
         self.gdb.add(obj)
         self.gdb.flush()
 
         id = obj.composition_id
-        command['oid'] = id                     # Save parent Id for future use
+        command['oid'] = id                   # Save parent Id for future use
 
-        parent_oid = parent.get('oid', None)    # get parent id of current item
+        parent_oid = parent.get('oid', None)  # get parent id of current item
 
         obj = CompositionItem()
         obj.child_id = id

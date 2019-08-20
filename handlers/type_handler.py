@@ -29,6 +29,7 @@ class TypeHandler(MainHandler):
 
         for type in types:
             type = type.serialize()
+            resp.append(type)
 
         # for t in types:
         #     t = t.serialize()
@@ -60,15 +61,14 @@ class TypeHandler(MainHandler):
 
     async def Add(self, *args, **kwargs):
         obj = self.myModel()
-        obj.type_name = self.data.get('type_name')
-        obj.type_type = self.data.get('type_type')
-        obj.type_description = self.data.get('type_description', None)
+
+        obj.name = self.data.get('name')
 
         self.gdb.add(obj)
         self.gdb.commit()
 
         self.set_header("Content-Type", "application/json")
-        self.write({'oid': obj.type_id})
+        self.write({'oid': obj.id})
 
     async def Update(self, *args, **kwargs):
         type_id = self.data.get('type_id')
